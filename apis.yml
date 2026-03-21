@@ -1,0 +1,7 @@
+aid: automatic-data-processing
+url: https://raw.githubusercontent.com/api-evangelist/automatic-data-processing/refs/heads/main/apis.yml
+modified: '2026-03-21'
+apis: []
+common:
+  - type: Website
+    url: https://www.automatic-data-processing.com
