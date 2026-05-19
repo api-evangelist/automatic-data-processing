@@ -142,6 +142,8 @@ apis:
         url: https://developers.adp.com
 
 common:
+  - type: LinkedIn
+    url: https://www.linkedin.com/company/adp
   - type: Portal
     url: https://developers.adp.com
   - type: Website
