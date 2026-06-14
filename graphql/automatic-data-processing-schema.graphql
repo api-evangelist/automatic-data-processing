@@ -1,0 +1,1231 @@
+# ADP (Automatic Data Processing) Conceptual GraphQL Schema
+# Source: https://developers.adp.com/
+# Covers: Worker Demographics, Payroll, Time & Labor, Benefits, Talent Management, Recruiting
+
+# ─────────────────────────────────────────────
+# Scalars
+# ─────────────────────────────────────────────
+
+scalar Date
+scalar DateTime
+scalar Decimal
+scalar JSON
+
+# ─────────────────────────────────────────────
+# Enums
+# ─────────────────────────────────────────────
+
+enum WorkerStatusCode {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  ON_LEAVE
+  REHIRED
+}
+
+enum EmploymentTypeCode {
+  FULL_TIME
+  PART_TIME
+  TEMPORARY
+  CONTRACT
+  SEASONAL
+}
+
+enum PayFrequencyCode {
+  WEEKLY
+  BIWEEKLY
+  SEMIMONTHLY
+  MONTHLY
+}
+
+enum PayrollStatusCode {
+  OPEN
+  PROCESSING
+  SUBMITTED
+  COMPLETE
+  CANCELLED
+}
+
+enum LeaveTypeCode {
+  FAMILY_MEDICAL
+  PERSONAL
+  MILITARY
+  BEREAVEMENT
+  JURY_DUTY
+  DISABILITY
+}
+
+enum BenefitTypeCode {
+  MEDICAL
+  DENTAL
+  VISION
+  LIFE_INSURANCE
+  DISABILITY
+  RETIREMENT_401K
+  FSA
+  HSA
+}
+
+enum EnrollmentStatusCode {
+  ENROLLED
+  WAIVED
+  PENDING
+  CANCELLED
+  ELIGIBLE
+}
+
+enum ReviewStatusCode {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  ACKNOWLEDGED
+  CLOSED
+}
+
+enum GoalStatusCode {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum EventTypeCode {
+  HIRE
+  TERMINATION
+  REHIRE
+  TRANSFER
+  PROMOTION
+  PAYROLL_COMPLETE
+  BENEFITS_ENROLLMENT
+  LIFE_EVENT
+}
+
+enum AddressTypeCode {
+  HOME
+  WORK
+  MAILING
+}
+
+enum CommunicationTypeCode {
+  PERSONAL_EMAIL
+  WORK_EMAIL
+  PERSONAL_PHONE
+  WORK_PHONE
+  MOBILE
+}
+
+# ─────────────────────────────────────────────
+# Common / Utility Types
+# ─────────────────────────────────────────────
+
+type Money {
+  amount: Decimal!
+  currencyCode: String!
+}
+
+type Cost {
+  laborCost: Money
+  benefitCost: Money
+  totalCost: Money
+  period: DateRange
+}
+
+type DateRange {
+  startDate: Date
+  endDate: Date
+}
+
+type Pagination {
+  totalCount: Int!
+  pageSize: Int!
+  pageNumber: Int!
+  hasNextPage: Boolean!
+}
+
+type Error {
+  code: String!
+  message: String!
+  field: String
+  details: JSON
+}
+
+# ─────────────────────────────────────────────
+# Worker / Employee Types
+# ─────────────────────────────────────────────
+
+type Worker {
+  workerID: ID!
+  associateOID: String!
+  workerStatus: WorkerStatus!
+  workerDetails: WorkerDetails
+  employment: Employment
+  payroll: Payroll
+  timeEntries(dateRange: DateRange): [TimeEntry!]!
+  schedule: Schedule
+  pto: PTO
+  leave: Leave
+  benefits: [BenefitElection!]!
+  goals: [Goal!]!
+  reviews: [Review!]!
+  learningHistory: [Course!]!
+  createdAt: DateTime
+  modifiedAt: DateTime
+}
+
+type WorkerDetails {
+  personName: PersonName!
+  birthDate: Date
+  gender: String
+  addresses: [Address!]!
+  communications: [Communication!]!
+  governmentIDs: [GovernmentID!]!
+}
+
+type WorkerStatus {
+  statusCode: WorkerStatusCode!
+  statusCodeValue: String!
+  effectiveDate: Date
+  reason: String
+}
+
+type PersonName {
+  givenName: String!
+  familyName: String!
+  middleName: String
+  preferredName: String
+  formattedName: String
+  titlePrefix: String
+  titleSuffix: String
+}
+
+type Address {
+  addressType: AddressTypeCode!
+  lineOne: String
+  lineTwo: String
+  lineThree: String
+  cityName: String
+  countrySubdivisionCode: String
+  countryCode: String!
+  postalCode: String
+  effectiveDate: Date
+}
+
+type Communication {
+  communicationType: CommunicationTypeCode!
+  value: String!
+  isPrimary: Boolean!
+}
+
+type GovernmentID {
+  idType: String!
+  idValue: String
+  countryCode: String
+}
+
+# ─────────────────────────────────────────────
+# Employment Types
+# ─────────────────────────────────────────────
+
+type Employment {
+  employmentID: ID!
+  worker: Worker!
+  employmentDetails: EmploymentDetails!
+  position: Position
+  department: Department
+  manager: Manager
+  organization: Organization
+  hireDate: Date
+  terminationDate: Date
+  seniorityDate: Date
+  createdAt: DateTime
+  modifiedAt: DateTime
+}
+
+type EmploymentDetails {
+  employmentTypeCode: EmploymentTypeCode!
+  workerTypeCode: String
+  wageLaborTypeCode: String
+  fullTimeEquivalenceRatio: Decimal
+  standardHoursPerWeek: Decimal
+  basePayRate: Money
+  basePayFrequency: PayFrequencyCode
+  flsaStatusCode: String
+  workLocationID: String
+  effectiveDate: Date
+}
+
+# ─────────────────────────────────────────────
+# Payroll Types
+# ─────────────────────────────────────────────
+
+type Payroll {
+  worker: Worker!
+  payrollProfile: PayrollProfile
+  paychecks(dateRange: DateRange, limit: Int): [Paycheck!]!
+  directDeposits: [DirectDeposit!]!
+  ytdEarnings: Money
+  ytdDeductions: Money
+  ytdTaxes: Money
+}
+
+type PayrollProfile {
+  payGroupID: String!
+  payFrequency: PayFrequencyCode!
+  payClassCode: String
+  taxWithholdingElections: [TaxWithholdingElection!]!
+}
+
+type TaxWithholdingElection {
+  jurisdictionCode: String!
+  filingStatusCode: String
+  exemptions: Int
+  additionalWithholding: Money
+}
+
+type PayrollRunDetails {
+  payrollRunID: ID!
+  payGroupID: String!
+  payPeriod: DateRange!
+  payDate: Date!
+  status: PayrollStatusCode!
+  paychecks: [Paycheck!]!
+  totalGrossPay: Money
+  totalNetPay: Money
+  totalTaxes: Money
+  totalDeductions: Money
+  createdAt: DateTime
+  processedAt: DateTime
+}
+
+type PayrollResult {
+  payrollRunID: ID!
+  successCount: Int!
+  errorCount: Int!
+  errors: [Error!]!
+  summary: PayrollRunDetails
+}
+
+type Paycheck {
+  paycheckID: ID!
+  worker: Worker!
+  payrollRun: PayrollRunDetails!
+  paycheckDetails: PaycheckDetails!
+  grossPay: Money!
+  netPay: Money!
+  payDate: Date!
+  checkNumber: String
+}
+
+type PaycheckDetails {
+  earnings: [EarningRecord!]!
+  deductions: [DeductionRecord!]!
+  taxes: [TaxRecord!]!
+  ytdSummary: PaycheckYTDSummary
+}
+
+type PaycheckYTDSummary {
+  ytdGrossPay: Money
+  ytdNetPay: Money
+  ytdFederalTax: Money
+  ytdStateTax: Money
+  ytdFicaTax: Money
+}
+
+type EarningRecord {
+  earningCodeID: String!
+  earningCodeName: String!
+  hours: Decimal
+  rate: Money
+  amount: Money!
+  earningClassificationCode: String
+}
+
+type DeductionRecord {
+  deductionCodeID: String!
+  deductionCodeName: String!
+  amount: Money!
+  preTaxAmount: Money
+  postTaxAmount: Money
+  goalAmount: Money
+  ytdAmount: Money
+}
+
+type TaxRecord {
+  taxCodeID: String!
+  taxCodeName: String!
+  taxTypeCode: String!
+  jurisdictionCode: String!
+  withheldAmount: Money!
+  ytdAmount: Money
+  employerAmount: Money
+}
+
+type DirectDeposit {
+  depositID: ID!
+  worker: Worker!
+  financialInstitutionName: String
+  routingTransitNumber: String!
+  accountNumber: String!
+  accountTypeCode: String!
+  allocationDetails: AllocationDetails!
+  isPrimary: Boolean!
+  effectiveDate: Date
+}
+
+type AllocationDetails {
+  allocationTypeCode: String!
+  allocationPercent: Decimal
+  allocationAmount: Money
+  remainingBalance: Boolean
+}
+
+# ─────────────────────────────────────────────
+# Time and Labor Types
+# ─────────────────────────────────────────────
+
+type TimeEntry {
+  timeEntryID: ID!
+  worker: Worker!
+  entryDate: Date!
+  startDateTime: DateTime
+  endDateTime: DateTime
+  hoursWorked: Decimal
+  laborTypeCode: String
+  costCenter: CostCenter
+  payCode: String
+  statusCode: String
+  notes: String
+  createdAt: DateTime
+  modifiedAt: DateTime
+}
+
+type Schedule {
+  scheduleID: ID!
+  worker: Worker!
+  effectivePeriod: DateRange!
+  shifts: [ScheduleShift!]!
+  totalScheduledHours: Decimal
+  createdAt: DateTime
+}
+
+type ScheduleShift {
+  shiftID: ID!
+  shiftDate: Date!
+  startTime: String!
+  endTime: String!
+  durationHours: Decimal!
+  locationID: String
+  payCode: String
+}
+
+type Attendance {
+  worker: Worker!
+  period: DateRange!
+  records: [AttendanceRecord!]!
+  totalHoursPresent: Decimal
+  totalHoursAbsent: Decimal
+  attendanceRate: Decimal
+}
+
+type AttendanceRecord {
+  recordDate: Date!
+  statusCode: String!
+  hoursPresent: Decimal
+  absenceCode: String
+  absenceReason: String
+}
+
+type PTO {
+  worker: Worker!
+  accruals: [PTOAccrual!]!
+  pendingRequests: [LeaveRequest!]!
+}
+
+type PTOAccrual {
+  accrualTypeCode: String!
+  accrualTypeName: String!
+  balanceHours: Decimal!
+  accrualRateHours: Decimal
+  usedHoursYTD: Decimal
+  pendingHours: Decimal
+  effectiveDate: Date!
+}
+
+type Leave {
+  worker: Worker!
+  activeLeaves: [LeaveRequest!]!
+  leaveHistory: [LeaveRequest!]!
+}
+
+type LeaveRequest {
+  leaveRequestID: ID!
+  worker: Worker!
+  leaveTypeCode: LeaveTypeCode!
+  leaveTypeName: String!
+  startDate: Date!
+  endDate: Date
+  requestedHours: Decimal
+  statusCode: String!
+  reason: String
+  approvedBy: Manager
+  submittedAt: DateTime
+  reviewedAt: DateTime
+}
+
+# ─────────────────────────────────────────────
+# Benefits Types
+# ─────────────────────────────────────────────
+
+type Benefit {
+  benefitID: ID!
+  benefitTypeCode: BenefitTypeCode!
+  benefitTypeName: String!
+  plans: [BenefitPlan!]!
+  effectivePeriod: DateRange
+}
+
+type BenefitPlan {
+  planID: ID!
+  planName: String!
+  planCode: String!
+  benefit: Benefit!
+  carrierName: String
+  employeeCost: Money
+  employerCost: Money
+  planDetails: JSON
+}
+
+type BenefitElection {
+  electionID: ID!
+  worker: Worker!
+  benefit: Benefit!
+  plan: BenefitPlan!
+  enrollmentStatus: EnrollmentStatusCode!
+  coverage: Coverage
+  dependents: [Dependent!]!
+  employeePremium: Money
+  effectiveDate: Date!
+  terminationDate: Date
+}
+
+type Enrollment {
+  enrollmentID: ID!
+  worker: Worker!
+  enrollmentType: String!
+  enrollmentDetails: EnrollmentDetails!
+  effectivePeriod: DateRange!
+  elections: [BenefitElection!]!
+  status: EnrollmentStatusCode!
+  submittedAt: DateTime
+  processedAt: DateTime
+}
+
+type EnrollmentDetails {
+  enrollmentReason: String!
+  lifeEvent: LifeEvent
+  electionDeadline: Date
+  confirmedAt: DateTime
+  confirmedByWorker: Boolean
+}
+
+type Coverage {
+  coverageTypeCode: String!
+  coverageLevel: String!
+  coverageAmount: Money
+  effectiveDate: Date!
+}
+
+type Dependent {
+  dependentID: ID!
+  personName: PersonName!
+  relationship: String!
+  birthDate: Date
+  governmentID: GovernmentID
+  isTobaccoUser: Boolean
+}
+
+type LifeEvent {
+  lifeEventID: ID!
+  lifeEventTypeCode: String!
+  lifeEventDate: Date!
+  enrollmentWindowStart: Date
+  enrollmentWindowEnd: Date
+  processedAt: DateTime
+}
+
+# ─────────────────────────────────────────────
+# Organizational Types
+# ─────────────────────────────────────────────
+
+type Organization {
+  organizationID: ID!
+  organizationName: String!
+  organizationCode: String
+  parentOrganization: Organization
+  departments: [Department!]!
+  locations: [Location!]!
+  employees: [Worker!]!
+  headcount: Int
+}
+
+type Department {
+  departmentID: ID!
+  departmentName: String!
+  departmentCode: String!
+  organization: Organization!
+  parentDepartment: Department
+  manager: Manager
+  positions: [Position!]!
+  workers: [Worker!]!
+  costCenter: CostCenter
+  headcount: Int
+}
+
+type Position {
+  positionID: ID!
+  positionTitle: String!
+  positionCode: String!
+  department: Department!
+  job: Job
+  workers: [Worker!]!
+  isBudgeted: Boolean
+  budgetedHeadcount: Int
+  effectiveDate: Date
+}
+
+type Job {
+  jobID: ID!
+  jobTitle: String!
+  jobCode: String!
+  jobFamily: String
+  flsaClassification: String
+  payGrade: String
+  payRange: PayRange
+  competencies: [Competency!]!
+}
+
+type PayRange {
+  minimumPay: Money
+  midpointPay: Money
+  maximumPay: Money
+  currency: String
+}
+
+type Team {
+  teamID: ID!
+  teamName: String!
+  manager: Manager!
+  members: [Worker!]!
+  department: Department
+  goals: [Goal!]!
+}
+
+type Manager {
+  managerID: ID!
+  worker: Worker!
+  directReports: [Worker!]!
+  reportCount: Int
+}
+
+type CostCenter {
+  costCenterID: ID!
+  costCenterCode: String!
+  costCenterName: String!
+  organization: Organization
+  department: Department
+  laborCosts: Cost
+}
+
+type Location {
+  locationID: ID!
+  locationName: String!
+  locationCode: String
+  address: Address!
+  timeZone: String
+  isRemote: Boolean
+}
+
+# ─────────────────────────────────────────────
+# Talent Management Types
+# ─────────────────────────────────────────────
+
+type Goal {
+  goalID: ID!
+  worker: Worker!
+  goalTitle: String!
+  goalDescription: String
+  goalStatus: GoalStatusCode!
+  targetDate: Date
+  completionDate: Date
+  weight: Decimal
+  progress: GoalProgress
+  parentGoal: Goal
+  alignedGoals: [Goal!]!
+  createdAt: DateTime
+  modifiedAt: DateTime
+}
+
+type GoalProgress {
+  progressPercent: Decimal!
+  lastUpdated: DateTime
+  milestones: [GoalMilestone!]!
+  comments: String
+}
+
+type GoalMilestone {
+  milestoneID: ID!
+  milestoneName: String!
+  targetDate: Date
+  completedDate: Date
+  isCompleted: Boolean!
+}
+
+type Performance {
+  worker: Worker!
+  currentRating: CompetencyRating
+  reviews: [Review!]!
+  goals: [Goal!]!
+  overallScore: Decimal
+  reviewPeriod: DateRange
+}
+
+type Review {
+  reviewID: ID!
+  worker: Worker!
+  reviewCycle: ReviewCycle!
+  reviewStatus: ReviewStatusCode!
+  reviewerWorker: Worker
+  overallRating: CompetencyRating
+  competencyRatings: [CompetencyRating!]!
+  goalRatings: [GoalRating!]!
+  comments: String
+  employeeComments: String
+  submittedAt: DateTime
+  acknowledgedAt: DateTime
+}
+
+type ReviewCycle {
+  cycleID: ID!
+  cycleName: String!
+  reviewPeriod: DateRange!
+  dueDate: Date!
+  isActive: Boolean!
+}
+
+type GoalRating {
+  goal: Goal!
+  rating: Decimal
+  comments: String
+}
+
+type Learning {
+  worker: Worker!
+  completedCourses: [Course!]!
+  inProgressCourses: [Course!]!
+  certifications: [Certification!]!
+  totalHoursCompleted: Decimal
+}
+
+type Course {
+  courseID: ID!
+  courseTitle: String!
+  courseCode: String
+  description: String
+  durationHours: Decimal
+  deliveryMethod: String
+  provider: String
+  completionDate: Date
+  expirationDate: Date
+  competencies: [Competency!]!
+  isRequired: Boolean
+}
+
+type Certification {
+  certificationID: ID!
+  certificationName: String!
+  issuingBody: String
+  issueDate: Date
+  expirationDate: Date
+  credentialID: String
+}
+
+type Competency {
+  competencyID: ID!
+  competencyName: String!
+  competencyCode: String
+  description: String
+  competencyLevel: String
+  relatedCourses: [Course!]!
+}
+
+type CompetencyRating {
+  competency: Competency!
+  rating: Decimal!
+  ratingLabel: String
+  comments: String
+}
+
+# ─────────────────────────────────────────────
+# Reporting and Analytics Types
+# ─────────────────────────────────────────────
+
+type Report {
+  reportID: ID!
+  reportName: String!
+  reportType: String!
+  reportDetails: ReportDetails!
+  generatedAt: DateTime
+  generatedBy: Worker
+}
+
+type ReportDetails {
+  description: String
+  columns: [ReportColumn!]!
+  filters: JSON
+  rowCount: Int
+  dataAsOf: DateTime
+  format: String
+}
+
+type ReportColumn {
+  columnName: String!
+  columnLabel: String!
+  dataType: String!
+  isSortable: Boolean
+  isFilterable: Boolean
+}
+
+type Analytics {
+  organizationID: ID!
+  period: DateRange!
+  metrics: [WorkforceMetric!]!
+}
+
+type WorkforceMetric {
+  metricName: String!
+  metricValue: Decimal!
+  metricUnit: String
+  changeFromPrior: Decimal
+  changePercent: Decimal
+  breakdowns: [MetricBreakdown!]!
+}
+
+type MetricBreakdown {
+  dimensionName: String!
+  dimensionValue: String!
+  metricValue: Decimal!
+}
+
+# ─────────────────────────────────────────────
+# Platform / Auth Types
+# ─────────────────────────────────────────────
+
+type APIKey {
+  keyID: ID!
+  clientID: String!
+  keyName: String!
+  scopes: [String!]!
+  createdAt: DateTime!
+  expiresAt: DateTime
+  lastUsedAt: DateTime
+  isActive: Boolean!
+}
+
+type Token {
+  accessToken: String!
+  tokenType: String!
+  expiresIn: Int!
+  scope: String
+  issuedAt: DateTime!
+}
+
+type Webhook {
+  webhookID: ID!
+  subscriberName: String!
+  deliveryURL: String!
+  subscribedEvents: [String!]!
+  isActive: Boolean!
+  signingSecret: String
+  createdAt: DateTime!
+  modifiedAt: DateTime
+}
+
+type WebhookEvent {
+  eventID: ID!
+  eventTypeCode: EventTypeCode!
+  eventDateTime: DateTime!
+  webhook: Webhook
+  payload: JSON!
+  deliveryStatus: String!
+  deliveryAttempts: Int
+  lastAttemptAt: DateTime
+}
+
+type EventSubscription {
+  subscriptionID: ID!
+  eventTypeCode: EventTypeCode!
+  webhook: Webhook!
+  filterCriteria: JSON
+  isActive: Boolean!
+  createdAt: DateTime!
+}
+
+type AuditLog {
+  logID: ID!
+  eventType: String!
+  resourceType: String!
+  resourceID: String!
+  actorWorkerID: String
+  actorClientID: String
+  changeDetails: JSON
+  timestamp: DateTime!
+  ipAddress: String
+}
+
+# ─────────────────────────────────────────────
+# Root Query Type
+# ─────────────────────────────────────────────
+
+type Query {
+  # Worker queries
+  worker(workerID: ID!): Worker
+  workers(status: WorkerStatusCode, departmentID: ID, locationID: ID, limit: Int, offset: Int): WorkerConnection!
+
+  # Employment queries
+  employment(employmentID: ID!): Employment
+  employmentsByWorker(workerID: ID!): [Employment!]!
+
+  # Payroll queries
+  payrollRun(payrollRunID: ID!): PayrollRunDetails
+  payrollRuns(payGroupID: String, dateRange: DateRange, status: PayrollStatusCode, limit: Int): [PayrollRunDetails!]!
+  paycheck(paycheckID: ID!): Paycheck
+  paychecks(workerID: ID!, dateRange: DateRange): [Paycheck!]!
+  directDeposits(workerID: ID!): [DirectDeposit!]!
+
+  # Time and Labor queries
+  timeEntries(workerID: ID!, dateRange: DateRange!): [TimeEntry!]!
+  schedule(workerID: ID!, dateRange: DateRange): Schedule
+  attendance(workerID: ID!, dateRange: DateRange!): Attendance
+  pto(workerID: ID!): PTO
+  leave(workerID: ID!): Leave
+  leaveRequest(leaveRequestID: ID!): LeaveRequest
+
+  # Benefits queries
+  benefits(benefitTypeCode: BenefitTypeCode): [Benefit!]!
+  benefitElections(workerID: ID!): [BenefitElection!]!
+  enrollment(enrollmentID: ID!): Enrollment
+  enrollments(workerID: ID!): [Enrollment!]!
+
+  # Organization queries
+  organization(organizationID: ID!): Organization
+  department(departmentID: ID!): Department
+  departments(organizationID: ID): [Department!]!
+  position(positionID: ID!): Position
+  positions(departmentID: ID): [Position!]!
+  job(jobID: ID!): Job
+  jobs(departmentID: ID, jobFamily: String): [Job!]!
+  team(teamID: ID!): Team
+  costCenter(costCenterID: ID!): CostCenter
+  costCenters(organizationID: ID): [CostCenter!]!
+
+  # Talent queries
+  goal(goalID: ID!): Goal
+  goals(workerID: ID!, status: GoalStatusCode): [Goal!]!
+  review(reviewID: ID!): Review
+  reviews(workerID: ID!, cycleID: ID): [Review!]!
+  reviewCycle(cycleID: ID!): ReviewCycle
+  performance(workerID: ID!): Performance
+  course(courseID: ID!): Course
+  courses(workerID: ID, isRequired: Boolean): [Course!]!
+  learning(workerID: ID!): Learning
+  competencies: [Competency!]!
+
+  # Reporting queries
+  report(reportID: ID!): Report
+  reports(reportType: String): [Report!]!
+  analytics(organizationID: ID!, period: DateRange!): Analytics
+
+  # Platform queries
+  apiKeys: [APIKey!]!
+  webhooks: [Webhook!]!
+  webhook(webhookID: ID!): Webhook
+  webhookEvents(webhookID: ID, eventTypeCode: EventTypeCode, limit: Int): [WebhookEvent!]!
+  auditLogs(resourceType: String, resourceID: String, dateRange: DateRange): [AuditLog!]!
+}
+
+# ─────────────────────────────────────────────
+# Connection Types
+# ─────────────────────────────────────────────
+
+type WorkerConnection {
+  nodes: [Worker!]!
+  pagination: Pagination!
+}
+
+# ─────────────────────────────────────────────
+# Root Mutation Type
+# ─────────────────────────────────────────────
+
+type Mutation {
+  # Worker mutations
+  createWorker(input: CreateWorkerInput!): Worker!
+  updateWorkerDetails(workerID: ID!, input: UpdateWorkerDetailsInput!): WorkerDetails!
+  updateWorkerStatus(workerID: ID!, input: UpdateWorkerStatusInput!): WorkerStatus!
+
+  # Employment mutations
+  createEmployment(input: CreateEmploymentInput!): Employment!
+  updateEmploymentDetails(employmentID: ID!, input: UpdateEmploymentDetailsInput!): EmploymentDetails!
+  terminateEmployment(employmentID: ID!, input: TerminateEmploymentInput!): Employment!
+
+  # Payroll mutations
+  submitPayrollInput(input: PayrollInputRequest!): PayrollResult!
+  addDirectDeposit(workerID: ID!, input: DirectDepositInput!): DirectDeposit!
+  updateDirectDeposit(depositID: ID!, input: DirectDepositInput!): DirectDeposit!
+  removeDirectDeposit(depositID: ID!): Boolean!
+
+  # Time mutations
+  createTimeEntry(input: CreateTimeEntryInput!): TimeEntry!
+  updateTimeEntry(timeEntryID: ID!, input: UpdateTimeEntryInput!): TimeEntry!
+  deleteTimeEntry(timeEntryID: ID!): Boolean!
+  submitLeaveRequest(input: LeaveRequestInput!): LeaveRequest!
+  approveLeaveRequest(leaveRequestID: ID!, approverComment: String): LeaveRequest!
+  denyLeaveRequest(leaveRequestID: ID!, denialReason: String!): LeaveRequest!
+
+  # Benefits mutations
+  createEnrollment(workerID: ID!, input: EnrollmentInput!): Enrollment!
+  updateBenefitElection(electionID: ID!, input: BenefitElectionInput!): BenefitElection!
+  processLifeEvent(workerID: ID!, input: LifeEventInput!): LifeEvent!
+
+  # Goal and performance mutations
+  createGoal(workerID: ID!, input: GoalInput!): Goal!
+  updateGoal(goalID: ID!, input: GoalInput!): Goal!
+  updateGoalProgress(goalID: ID!, input: GoalProgressInput!): GoalProgress!
+  submitReview(input: ReviewInput!): Review!
+  acknowledgeReview(reviewID: ID!): Review!
+
+  # Platform mutations
+  createWebhook(input: WebhookInput!): Webhook!
+  updateWebhook(webhookID: ID!, input: WebhookInput!): Webhook!
+  deleteWebhook(webhookID: ID!): Boolean!
+  createEventSubscription(input: EventSubscriptionInput!): EventSubscription!
+}
+
+# ─────────────────────────────────────────────
+# Input Types
+# ─────────────────────────────────────────────
+
+input CreateWorkerInput {
+  personName: PersonNameInput!
+  hireDate: Date!
+  positionID: ID
+  departmentID: ID
+  employmentTypeCode: EmploymentTypeCode!
+  basePayRate: MoneyInput
+  payFrequency: PayFrequencyCode
+}
+
+input UpdateWorkerDetailsInput {
+  personName: PersonNameInput
+  birthDate: Date
+  gender: String
+  addresses: [AddressInput!]
+  communications: [CommunicationInput!]
+}
+
+input UpdateWorkerStatusInput {
+  statusCode: WorkerStatusCode!
+  effectiveDate: Date!
+  reason: String
+}
+
+input PersonNameInput {
+  givenName: String!
+  familyName: String!
+  middleName: String
+  preferredName: String
+  titlePrefix: String
+}
+
+input AddressInput {
+  addressType: AddressTypeCode!
+  lineOne: String!
+  lineTwo: String
+  cityName: String!
+  countrySubdivisionCode: String
+  countryCode: String!
+  postalCode: String
+  effectiveDate: Date
+}
+
+input CommunicationInput {
+  communicationType: CommunicationTypeCode!
+  value: String!
+  isPrimary: Boolean
+}
+
+input MoneyInput {
+  amount: Decimal!
+  currencyCode: String!
+}
+
+input CreateEmploymentInput {
+  workerID: ID!
+  positionID: ID
+  departmentID: ID!
+  employmentTypeCode: EmploymentTypeCode!
+  hireDate: Date!
+  basePayRate: MoneyInput
+  payFrequency: PayFrequencyCode
+}
+
+input UpdateEmploymentDetailsInput {
+  employmentTypeCode: EmploymentTypeCode
+  fullTimeEquivalenceRatio: Decimal
+  standardHoursPerWeek: Decimal
+  basePayRate: MoneyInput
+  payFrequency: PayFrequencyCode
+  effectiveDate: Date!
+}
+
+input TerminateEmploymentInput {
+  terminationDate: Date!
+  terminationReasonCode: String!
+  isVoluntary: Boolean!
+  lastPaycheckDate: Date
+}
+
+input PayrollInputRequest {
+  payGroupID: String!
+  payPeriod: DateRangeInput!
+  earnings: [EarningInput!]!
+  deductions: [DeductionInput!]
+}
+
+input EarningInput {
+  workerID: ID!
+  earningCodeID: String!
+  hours: Decimal
+  amount: MoneyInput
+}
+
+input DeductionInput {
+  workerID: ID!
+  deductionCodeID: String!
+  amount: MoneyInput!
+}
+
+input DirectDepositInput {
+  routingTransitNumber: String!
+  accountNumber: String!
+  accountTypeCode: String!
+  allocationDetails: AllocationDetailsInput!
+  isPrimary: Boolean
+  effectiveDate: Date
+}
+
+input AllocationDetailsInput {
+  allocationTypeCode: String!
+  allocationPercent: Decimal
+  allocationAmount: MoneyInput
+}
+
+input CreateTimeEntryInput {
+  workerID: ID!
+  entryDate: Date!
+  startDateTime: DateTime
+  endDateTime: DateTime
+  hoursWorked: Decimal
+  payCode: String!
+  costCenterID: ID
+  notes: String
+}
+
+input UpdateTimeEntryInput {
+  startDateTime: DateTime
+  endDateTime: DateTime
+  hoursWorked: Decimal
+  payCode: String
+  notes: String
+}
+
+input LeaveRequestInput {
+  workerID: ID!
+  leaveTypeCode: LeaveTypeCode!
+  startDate: Date!
+  endDate: Date
+  requestedHours: Decimal
+  reason: String
+}
+
+input EnrollmentInput {
+  enrollmentReason: String!
+  lifeEventID: ID
+  elections: [BenefitElectionInput!]!
+}
+
+input BenefitElectionInput {
+  planID: ID!
+  enrollmentStatus: EnrollmentStatusCode!
+  dependentIDs: [ID!]
+  effectiveDate: Date!
+}
+
+input LifeEventInput {
+  lifeEventTypeCode: String!
+  lifeEventDate: Date!
+}
+
+input GoalInput {
+  goalTitle: String!
+  goalDescription: String
+  targetDate: Date
+  weight: Decimal
+  parentGoalID: ID
+}
+
+input GoalProgressInput {
+  progressPercent: Decimal!
+  comments: String
+}
+
+input ReviewInput {
+  workerID: ID!
+  cycleID: ID!
+  reviewerWorkerID: ID
+  overallRating: Decimal
+  competencyRatings: [CompetencyRatingInput!]
+  goalRatings: [GoalRatingInput!]
+  comments: String
+  employeeComments: String
+}
+
+input CompetencyRatingInput {
+  competencyID: ID!
+  rating: Decimal!
+  comments: String
+}
+
+input GoalRatingInput {
+  goalID: ID!
+  rating: Decimal
+  comments: String
+}
+
+input WebhookInput {
+  subscriberName: String!
+  deliveryURL: String!
+  subscribedEvents: [String!]!
+  isActive: Boolean
+}
+
+input EventSubscriptionInput {
+  eventTypeCode: EventTypeCode!
+  webhookID: ID!
+  filterCriteria: JSON
+}
+
+input DateRangeInput {
+  startDate: Date!
+  endDate: Date!
+}
