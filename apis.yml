@@ -142,7 +142,7 @@ common:
   url: https://developers.adp.com/articles/guide/adp-marketplace-app-intro
 - type: Authentication
   url: https://developers.adp.com/articles/guide/auth-process-data-conn-mgr-mngd-oauth2
-- type: SignUp
+- type: Signup
   url: https://developers.adp.com/articles/guide/registration
 - type: Marketplace
   url: https://apps.adp.com
