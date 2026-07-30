@@ -1,4 +1,17 @@
 aid: automatic-data-processing
+accessModel:
+  pricing: unknown
+  onboarding: approval
+  trial: false
+  try_now: false
+  public: false
+  label: Requires approval
+  confidence: medium
+  source:
+  - plans
+  generated: '2026-07-22'
+  method: derived
+image: https://kinlane-images.s3.amazonaws.com/shared/apis-json/icons/automatic-data-processing.png
 name: Automatic Data Processing (ADP)
 description: Automatic Data Processing (ADP) is a global provider of cloud-based human
   capital management (HCM) solutions including payroll processing, benefits administration,
