@@ -4,58 +4,52 @@ schema: https://raw.githubusercontent.com/api-evangelist/interface-research/main
 provider: Automatic Data Processing (ADP)
 providerId: automatic-data-processing
 created: '2026-05-04'
-# Provenance stamped 2026-08-11: this artifact was written by the API Evangelist
-# bulk sweep dated 2026-05-04, not harvested from the provider. See roadmap#35.
-method: generated
-modified: '2026-05-05'
-reconciled: false
-notes: ADP does not publish public API pricing. Access to the ADP API surface is gated through ADP's
-  partner program (Marketplace Partners, Integration Partners) and via the ADP Marketplace for end
-  customers. Pricing is custom per agreement and varies by product line (Workforce Now, Vantage HCM,
-  RUN, GlobalView). Reconciliation requires a partner relationship; this artifact captures only the
-  publicly visible access model.
+method: searched
+modified: '2026-09-14'
+reconciled: true
+notes: 'Re-checked 2026-09-14. ADP publishes NO pricing for API access, at any tier, anywhere on www.adp.com, developers.adp.com
+  or apps.adp.com. Access is gated behind a developer agreement: an organization contracts with ADP (as an ADP Marketplace
+  partner, an Integration partner, or an API Central client) and the API entitlement is bundled into the ADP product
+  subscription the mutual client already pays for — Workforce Now, RUN, Vantage HCM, Enterprise HCM, iHCM or GlobalView.
+  Partners are not metered per call. ADP''s own guidance on the Workforce Now API catalogue page is to ''contact your
+  ADP representative regarding availability and pricing''. plan_count is 0 because there is no published plan to record,
+  not because none was looked for.'
 tags:
-  - HCM
-  - Human Capital Management
-  - HR
-  - Payroll
-  - Benefits
-  - Workforce Management
-  - Tax Compliance
-  - Enterprise
-description: ADP gates API access via its Marketplace (https://apps.adp.com/) and partner program
-  rather than self-serve pricing tiers. There are no public per-call rates. Integration partners enter
-  a contract; mutual customers grant consent through ADP's authorization service. Pricing is bundled
-  into the ADP product subscription (Workforce Now, RUN, Vantage, etc.) and not separately metered to
-  the partner.
+- HCM
+- Human Capital Management
+- HR
+- Payroll
+- Benefits
+- Workforce Management
+- Tax Compliance
+- Enterprise
+description: ADP gates API access via its Marketplace (https://apps.adp.com/) and partner program rather than self-serve
+  pricing tiers. There are no public per-call rates. Integration partners enter a contract; mutual customers grant
+  consent through ADP's authorization service. Pricing is bundled into the ADP product subscription (Workforce Now,
+  RUN, Vantage, etc.) and not separately metered to the partner.
 sources:
-  - https://www.adp.com/
-  - https://apps.adp.com/
-  - https://developers.adp.com/
-plans:
-  - id: automatic-data-processing-marketplace-partner
-    name: ADP Marketplace Partner
-    type: enterprise
-    description: Custom-negotiated partner agreement granting API access to ADP HCM platforms via the
-      ADP Marketplace. Pricing depends on product line and integration scope.
-    entries:
-      - label: API Access
-        name: api_access
-        type: flat
-        metric: varies
-        limit: -1
-        timeFrame: usage
-        geo: global
-        unit: 1
-        price: contact sales
-        userMultiplied: false
-    elements:
-      - name: ADP Workforce Now API
-      - name: ADP Vantage HCM API
-      - name: ADP RUN API
-      - name: ADP GlobalView API
-      - name: OAuth 2.0 / Consent Management
-      - name: Marketplace Listing
+- https://www.adp.com/
+- https://apps.adp.com/
+- https://developers.adp.com/
+- https://developers.adp.com/articles/guides/adp-workforce-now-api-catalog
+- https://www.adp.com/what-we-offer/integrations/api-central.aspx
+plans: []
 maintainers:
-  - FN: Kin Lane
-    email: kin@apievangelist.com
+- FN: Kin Lane
+  email: kin@apievangelist.com
+generated: '2026-09-14'
+plan_count: 0
+access:
+  self_serve: false
+  public_pricing: false
+  onboarding: developer agreement + ADP-issued credentials and X.509 certificate
+  consumer_types:
+  - type: ADP Marketplace partner
+    description: An ISV publishing an integration to apps.adp.com. Scope agreed with ADP at application registration;
+      pricing negotiated.
+  - type: ADP API Central client
+    description: An ADP client building its own integrations. Delivered as a Marketplace app (apps.adp.com/en-US/apps/410612)
+      bundled with the ADP product subscription.
+  - type: Integration partner
+    description: A contracted ADP partner integrating on behalf of mutual clients.
+  pricing_signal: contact sales / contact your ADP representative

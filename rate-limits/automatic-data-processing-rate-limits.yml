@@ -4,49 +4,66 @@ schema: https://raw.githubusercontent.com/api-evangelist/interface-research/main
 provider: Automatic Data Processing (ADP)
 providerId: automatic-data-processing
 created: '2026-05-04'
-# Provenance stamped 2026-08-11: this artifact was written by the API Evangelist
-# bulk sweep dated 2026-05-04, not harvested from the provider. See roadmap#35.
-method: generated
-modified: '2026-05-05'
-reconciled: false
-notes: ADP does not publish numeric rate limits on its public developer portal. Limits are governed by
-  the partner agreement and the consenting customer's ADP product subscription. Concrete numbers
-  require a signed partner agreement.
+modified: '2026-09-14'
+generated: '2026-09-14'
+method: searched
+reconciled: true
+limit_count: 0
+sources:
+  - https://developers.adp.com/getting-started/key-concepts/api-common-exceptions-and-tips-for-handling
+  - https://developers.adp.com/getting-started/key-concepts/working-with-an-adp-product-maintenance-schedule
+  - openapi/_original/*.json
 tags:
   - HCM
-  - Human Capital Management
-  - HR
   - Payroll
-  - Benefits
-  - Workforce Management
-  - Tax Compliance
-  - Enterprise
+  - HR
   - Rate Limiting
-description: Rate limit posture for the ADP HCM API surface. ADP does not publicly document per-second
-  or per-minute limits; throttling decisions are made by ADP based on the partner contract and the
-  underlying ADP product (Workforce Now, RUN, Vantage). Sustained partner traffic is shaped by ADP's
-  shared-tenant architecture and may be increased via partner support.
+description: >-
+  ADP publishes no numeric rate limit anywhere on its developer portal — not per second, per minute,
+  per day, per key or per tenant. This was re-checked on 2026-09-14 against the full set of 15 titled
+  key-concept articles served by the developer portal's own content API and against all 59 harvested
+  ADP Workforce Now OpenAPI documents. limit_count is therefore an honest 0: there is no published
+  number to record. What ADP does publish is the runtime signal and the backoff contract, captured
+  below. Concrete throughput is set in the partner agreement and raised through a Marketplace
+  Technical Advisor or ADP representative, not through a self-serve console.
+runtime_signal:
+  throttled_status: 429
+  throttled_status_declared_on_operations: 328
+  service_unavailable_status: 503
+  service_unavailable_declared_on_operations: 357
+  gateway_timeout_status: 504
+  gateway_timeout_declared_on_operations: 99
+  retry_after: declared on ADP 201 responses; ADP's guidance is to honour Retry-After on 429 and 503
+  rate_limit_headers: none
+  note: >-
+    ADP declares no X-RateLimit-* or RFC 9331 RateLimit-* response headers on any operation. An agent
+    cannot read remaining quota from a response — it can only observe the 429 and back off.
 responseCodes:
   throttled: 429
   serviceUnavailable: 503
-limits:
-  - name: ADP Marketplace Partner Default
-    scope: partner-application
-    metric: varies
-    limit: see ADP partner agreement
-    notes: ADP does not publish numeric per-second or per-minute limits. Apply exponential backoff with
-      jitter and honor Retry-After.
+  gatewayTimeout: 504
+limits: []
 policies:
-  - name: Backoff Strategy
-    description: Implement exponential backoff with jitter. Honor the Retry-After header when present
-      on 429 / 503 responses.
-  - name: Consent-Scoped Access
-    description: API calls are scoped to customers who have granted consent to the partner application
-      through ADP's Marketplace consent flow. Revocation immediately removes access to that customer's
-      data.
-  - name: Partner Support Path
-    description: Production rate limit increases are requested through the ADP Marketplace partner
-      manager rather than a self-serve console.
+  - name: Backoff strategy
+    description: Exponential backoff with jitter; honour the Retry-After header when present on 429 or 503.
+  - name: Token reuse
+    description: >-
+      ADP's own guidance is an effective rate control — an access token lives 60 minutes and must be
+      reused. "Do not call a new token for every API request."
+    source: https://developers.adp.com/getting-started/key-concepts/access-tokens
+  - name: Planned maintenance windows
+    description: >-
+      ADP Marketplace Platform maintenance runs Tuesday, Wednesday and Thursday 21:00-06:00 US
+      Eastern and API calls fail during it. ADP advises stopping 30 minutes before the scheduled start
+      and resuming 60 minutes after the scheduled end. This is a bigger practical constraint on an
+      integration's call schedule than any published rate limit would be.
+    source: https://developers.adp.com/getting-started/key-concepts/working-with-an-adp-product-maintenance-schedule
+  - name: Consent-scoped access
+    description: >-
+      Calls are scoped to the client organizations that consented to the application. Revocation
+      removes access immediately and returns 403 access_denied — not a throttle, and not retryable.
+  - name: Partner support path
+    description: Production throughput increases are requested through the ADP Marketplace partner manager or ADP representative.
 maintainers:
   - FN: Kin Lane
     email: kin@apievangelist.com

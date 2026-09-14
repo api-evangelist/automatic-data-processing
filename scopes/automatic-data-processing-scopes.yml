@@ -1,0 +1,45 @@
+generated: '2026-09-14'
+method: probed
+source: https://apps.adp.com/.well-known/openid-configuration
+docs: https://developers.adp.com/getting-started/key-concepts/access-tokens
+note: >-
+  ADP's API scope model has two distinct layers and only one of them is enumerable in public. The
+  OpenID Connect layer used by ADP Marketplace SSO publishes its scopes in a live discovery document
+  (below). The API-authorization layer does NOT use named OAuth scopes at all: an application's
+  "scope" is the list of ADP APIs registered against it at application-registration time, agreed with
+  ADP and fixed for the life of the application. Requesting an unregistered API returns
+  403 invalid_scope, and the remedy documented by ADP is to contact an ADP representative with the
+  organization name, application name and the list of APIs to add — not to request a different scope
+  string. None of the 59 harvested OpenAPI documents declares an oauth2 securityScheme, so there is
+  no spec-derivable scope set to enumerate.
+schemes:
+  - name: ADP Marketplace OpenID Connect
+    source: https://apps.adp.com/.well-known/openid-configuration
+    flows:
+      - flow: authorizationCode
+        authorizationUrl: https://apps.adp.com/oauth2/authorize
+        tokenUrl: https://apps.adp.com/oauth2/token
+scopes:
+  - scope: openid
+    description: Required OpenID Connect scope; requests an ID token for the signed-in ADP user.
+    flows: [authorizationCode]
+    sources: [https://apps.adp.com/.well-known/openid-configuration]
+  - scope: email
+    description: Releases the email and email_verified claims for the signed-in ADP user.
+    flows: [authorizationCode]
+    sources: [https://apps.adp.com/.well-known/openid-configuration]
+  - scope: profile
+    description: Releases the name, given_name and family_name claims for the signed-in ADP user.
+    flows: [authorizationCode]
+    sources: [https://apps.adp.com/.well-known/openid-configuration]
+  - scope: company
+    description: Releases the ADP client organization the signed-in user belongs to.
+    flows: [authorizationCode]
+    sources: [https://apps.adp.com/.well-known/openid-configuration]
+api_authorization:
+  model: registered-application scope, not named OAuth scopes
+  granted_at: application registration with ADP
+  mutable_by_developer: false
+  change_path: contact the ADP representative (API Central clients) or Marketplace Technical Advisor (Marketplace partners) with organization name, application name and the list of APIs to add
+  denial: 403 invalid_scope — "The requested scope is not allowed"
+  source: https://developers.adp.com/getting-started/key-concepts/api-common-exceptions-and-tips-for-handling

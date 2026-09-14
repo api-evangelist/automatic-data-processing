@@ -1,3 +1,20 @@
+<!--
+API EVANGELIST PROVENANCE NOTICE — added 2026-09-14 by the enrichment pipeline.
+
+THIS SCHEMA IS NOT PUBLISHED BY ADP. It is a *conceptual* GraphQL schema that an earlier round of
+this pipeline authored from ADP's REST documentation. ADP does not operate a public GraphQL API:
+there is no documented /graphql endpoint, no introspection surface offered to developers, and no
+mention of GraphQL anywhere in the 15 key-concept articles or the 497 API documents the ADP
+developer portal serves. (One internal endpoint, cir-services-graphql.prod.us.caas.oneadp.com/graphql,
+is referenced by the developer-portal application bundle; it is ADP's own internal service and is not
+offered to API consumers.)
+
+The apis.yml `type: GraphQL` pointer that used to reference this file has been REMOVED, because a
+pointer asserts that the provider publishes the thing pointed at. The file is retained only as a
+record of what was written, and must not be re-wired or treated as an ADP contract. ADP's real
+machine-readable contracts are the 59 OpenAPI 3.0.1 documents harvested into openapi/.
+-->
+
 # ADP (Automatic Data Processing) GraphQL Schema
 
 ## Overview

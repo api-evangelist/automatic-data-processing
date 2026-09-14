@@ -1,0 +1,95 @@
+generated: '2026-09-14'
+method: searched
+source: https://developers.adp.com/getting-started/key-concepts/access-tokens
+docs:
+  - https://developers.adp.com/getting-started/key-concepts/access-tokens
+  - https://developers.adp.com/getting-started/key-concepts/introduction-mutual-ssl
+  - https://developers.adp.com/getting-started/key-concepts/generate-a-certificate-signing-request
+  - https://developers.adp.com/getting-started/key-concepts/application-types
+  - https://developers.adp.com/getting-started/key-concepts/api-common-exceptions-and-tips-for-handling
+probed:
+  - url: https://apps.adp.com/.well-known/openid-configuration
+    status: 200
+    file: well-known/automatic-data-processing-openid-configuration.json
+note: >-
+  The 59 harvested ADP OpenAPI documents declare NO components.securitySchemes — authentication is
+  carried as an ordinary `Authorization` header parameter on 343 of the 362 operations, so a purely
+  mechanical derive from the specs produces an empty profile. This artifact is therefore searched
+  from ADP's own developer documentation and from the one live OIDC discovery document ADP serves.
+summary:
+  types: [oauth2, openIdConnect, mutualTLS]
+  api_key_in: []
+  oauth2_flows: [clientCredentials, authorizationCode]
+  transport_client_authentication: mutual-TLS with a client X.509 certificate (required in production)
+  token_lifetime: 60 minutes
+schemes:
+  - name: ADP OAuth 2.0 client credentials
+    type: oauth2
+    flow: clientCredentials
+    applies_to: Data Connector applications — system-to-system, no end user in session
+    token_url: https://accounts.adp.com/auth/oauth/v2/token
+    token_url_uat: https://uat-accounts.adp.com/auth/oauth/v2/token
+    credentials: client_id + client_secret issued per subscribing ADP client organization
+    bearer: 'Authorization: Bearer <access_token>'
+    token_lifetime_seconds: 3600
+    source: https://developers.adp.com/getting-started/key-concepts/access-tokens
+  - name: ADP OAuth 2.0 authorization code
+    type: oauth2
+    flow: authorizationCode
+    applies_to: End User applications — the end user is in session with ADP and their identity is required
+    authorization_url: https://accounts.adp.com/auth/oauth/v2/authorize
+    token_url: https://accounts.adp.com/auth/oauth/v2/token
+    source: https://developers.adp.com/getting-started/key-concepts/application-types
+  - name: ADP Marketplace OpenID Connect
+    type: openIdConnect
+    issuer: https://apps.adp.com
+    openid_configuration: https://apps.adp.com/.well-known/openid-configuration
+    authorization_endpoint: https://apps.adp.com/oauth2/authorize
+    token_endpoint: https://apps.adp.com/oauth2/token
+    userinfo_endpoint: https://apps.adp.com/oauth2/userinfo
+    jwks_uri: https://apps.adp.com/oauth2/certs
+    response_types_supported: [code]
+    id_token_signing_alg_values_supported: [RS256]
+    token_endpoint_auth_methods_supported: [client_secret_basic]
+    scopes_supported: [openid, email, profile, company]
+    claims_supported: [sub, name, given_name, family_name, email, email_verified, iss, aud, exp, iat]
+    method: probed
+    source: https://apps.adp.com/.well-known/openid-configuration
+  - name: Mutual TLS (transport client authentication)
+    type: mutualTLS
+    required: true
+    description: >-
+      ADP requires an X.509 client certificate on both the token host (accounts.adp.com) and the API
+      host (api.adp.com). The certificate is obtained by generating a Certificate Signing Request and
+      having ADP issue the certificate against it. A missing or wrong certificate returns
+      401 invalid_request "proper client ssl certificate was not presented".
+    hosts: [accounts.adp.com, api.adp.com, uat-accounts.adp.com, uat-api.adp.com]
+    source: https://developers.adp.com/getting-started/key-concepts/introduction-mutual-ssl
+consent:
+  model: per-client consent through the ADP Marketplace Consent Manager
+  description: >-
+    An application's access is scoped to the ADP client organizations that have subscribed to it and
+    granted consent. Revoking consent or suspending the subscription removes access to that client's
+    data immediately and the API answers 403 access_denied.
+  docs: https://developers.adp.com/getting-started/key-concepts/data-connector-application-access-control-guide-for-adp-workforce-now
+context_headers:
+  note: >-
+    Beyond the bearer token, ADP carries caller identity and delegation in headers that appear on
+    every operation in the specs.
+  headers:
+    - {name: Authorization, occurrences: 343, purpose: Bearer access token}
+    - {name: orgoid, occurrences: 362, purpose: the ADP client organization the call is scoped to}
+    - {name: associateoid, occurrences: 362, purpose: the acting associate}
+    - {name: roleCode, occurrences: 362, purpose: the ADP product role the caller is exercising; a missing or unassigned role returns 400 "Invalid / Missing Role code"}
+    - {name: ADP-Consumer-ApplicationID, occurrences: 335, purpose: identifies the calling consumer application}
+    - {name: ADP-Act-As-AssociateOID, occurrences: 309, purpose: act-as delegation}
+    - {name: ADP-On-Behalf-Of-AssociateOID, occurrences: 309, purpose: on-behalf-of delegation}
+    - {name: ADP-On-Behalf-Of-OrgOID, occurrences: 309, purpose: on-behalf-of organization}
+errors:
+  - {status: 400, code: invalid_request, meaning: missing or duplicate token parameters}
+  - {status: 400, code: unsupported_grant_type, meaning: grant_type not accepted}
+  - {status: 401, code: invalid_client, meaning: client_id/client_secret invalid}
+  - {status: 401, code: invalid_token, meaning: expired, revoked or malformed token; detail on WWW-Authenticate}
+  - {status: 403, code: insufficient_scope, meaning: token lacks the required privilege}
+  - {status: 403, code: access_denied, meaning: consent not provided or subscription suspended}
+  - {status: 403, code: invalid_scope, meaning: API not registered in the application scope}
